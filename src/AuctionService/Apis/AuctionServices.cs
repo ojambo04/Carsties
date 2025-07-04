@@ -1,0 +1,10 @@
+using AuctionService.Data;
+using AutoMapper;
+
+namespace AuctionService.Apis;
+
+public record AuctionServices(
+    IMapper Mapper,
+    AuctionDbContext Context,
+    HttpContext HttpContext
+);
