@@ -13,7 +13,7 @@ public static class AuctionApi
 	{
 		var api = app.MapGroup("/api/auctions")
 			.WithTags("Auctions")
-			.AddEndpointFilter<ValidationFilter>();;
+			.AddEndpointFilter<ValidationFilter>(); ;
 
 		api.MapGet("/", GetAuctions)
 			.WithName("GetAuctions")
@@ -52,7 +52,8 @@ public static class AuctionApi
 		[AsParameters] AuctionServices service,
 		[FromQuery] string? date)
 	{
-		var query = service.Context.Auctions.OrderBy(x => x.Item!.Make).AsQueryable();
+		var query = service.Context.Auctions
+			.OrderBy(x => x.Item!.Make).AsQueryable();
 
 		if (!string.IsNullOrEmpty(date))
 		{
@@ -86,7 +87,7 @@ public static class AuctionApi
 		[AsParameters] AuctionServices services,
 		[FromBody] CreateAuctionDto dto)
 	{
-		var auction = services.Mapper.Map<Auction>(dto);	
+		var auction = services.Mapper.Map<Auction>(dto);
 
 		services.Context.Auctions.Add(auction);
 		var result = await services.Context.SaveChangesAsync() > 0;
@@ -104,8 +105,8 @@ public static class AuctionApi
 		[FromBody] UpdateAuctionDto dto)
 	{
 		var auction = await services.Context.Auctions
-            .Include(x => x.Item)
-            .FirstOrDefaultAsync(x => x.Id == id);
+			.Include(x => x.Item)
+			.FirstOrDefaultAsync(x => x.Id == id);
 
 		if (auction is null) return Results.NotFound();
 
@@ -113,12 +114,12 @@ public static class AuctionApi
 		// {
 		// 	return Results.Forbid();
 		// }
-		
+
 		auction.Item!.Make = dto.Make ?? auction.Item.Make;
-        auction.Item!.Model = dto.Model ?? auction.Item.Model;
-        auction.Item!.Year = dto.Year;
-        auction.Item!.Color = dto.Color ?? auction.Item.Color;
-        auction.Item!.Mileage = dto.Mileage;
+		auction.Item!.Model = dto.Model ?? auction.Item.Model;
+		auction.Item!.Year = dto.Year;
+		auction.Item!.Color = dto.Color ?? auction.Item.Color;
+		auction.Item!.Mileage = dto.Mileage;
 
 		var auctionDto = services.Mapper.Map<AuctionDto>(auction);
 
@@ -130,8 +131,8 @@ public static class AuctionApi
 
 		var result = await services.Context.SaveChangesAsync() > 0;
 
-        return result
-			? Results.Ok(auctionDto) 
+		return result
+			? Results.Ok(auctionDto)
 			: Results.BadRequest("Failed to update auction");
 	}
 
@@ -153,6 +154,6 @@ public static class AuctionApi
 
 		await services.Context.SaveChangesAsync();
 
-		return Results.NoContent();
+		return Results.Ok();
 	}
 }
