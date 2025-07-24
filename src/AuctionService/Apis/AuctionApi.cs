@@ -2,6 +2,7 @@ using AuctionService.DTOs;
 using AuctionService.Entities;
 using AuctionService.Filters;
 using AutoMapper.QueryableExtensions;
+using Contracts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -88,15 +89,16 @@ public static class AuctionApi
 		[FromBody] CreateAuctionDto dto)
 	{
 		var auction = services.Mapper.Map<Auction>(dto);
-
 		services.Context.Auctions.Add(auction);
-		var result = await services.Context.SaveChangesAsync() > 0;
 
 		var auctionDto = services.Mapper.Map<AuctionDto>(auction);
+		await services.Publisher.Publish(services.Mapper.Map<AuctionCreated>(auctionDto));
 
-		return result
-			? Results.Created($"/api/auctions/{auction.Id}", auctionDto)
-			: Results.BadRequest("Failed to create auction");
+		var result = await services.Context.SaveChangesAsync() > 0;
+
+		return result ?
+			Results.Created($"/api/auctions/{auction.Id}", auctionDto) :
+			Results.BadRequest("Failed to create auction");
 	}
 
 	public static async Task<IResult> UpdateAuction(
@@ -117,9 +119,9 @@ public static class AuctionApi
 
 		auction.Item!.Make = dto.Make ?? auction.Item.Make;
 		auction.Item!.Model = dto.Model ?? auction.Item.Model;
-		auction.Item!.Year = dto.Year;
+		auction.Item!.Year = dto.Year ?? auction.Item.Year;
 		auction.Item!.Color = dto.Color ?? auction.Item.Color;
-		auction.Item!.Mileage = dto.Mileage;
+		auction.Item!.Mileage = dto.Mileage ?? auction.Item.Mileage;
 
 		var auctionDto = services.Mapper.Map<AuctionDto>(auction);
 
@@ -129,11 +131,13 @@ public static class AuctionApi
 			return Results.Ok(auctionDto);
 		}
 
+		await services.Publisher.Publish(services.Mapper.Map<AuctionUpdated>(auctionDto));
+
 		var result = await services.Context.SaveChangesAsync() > 0;
 
-		return result
-			? Results.Ok(auctionDto)
-			: Results.BadRequest("Failed to update auction");
+		return result ?
+			Results.Ok(auctionDto) :
+			Results.BadRequest("Failed to update auction");
 	}
 
 	private static async Task<IResult> DeleteAuctionById(
@@ -151,6 +155,8 @@ public static class AuctionApi
 		// }
 
 		services.Context.Auctions.Remove(auction);
+
+		await services.Publisher.Publish(new AuctionDeleted { Id = auction.Id.ToString() });
 
 		await services.Context.SaveChangesAsync();
 
