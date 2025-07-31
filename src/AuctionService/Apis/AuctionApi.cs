@@ -27,21 +27,21 @@ public static class AuctionApi
 
 		api.MapPost("/", CreateAuction)
 			.WithName("CreateAuction")
-			// .RequireAuthorization()
+			.RequireAuthorization()
 			.Produces<AuctionDto>(StatusCodes.Status201Created)
 			.Produces(StatusCodes.Status400BadRequest)
 			.Produces(StatusCodes.Status401Unauthorized);
 
 		api.MapPut("/{id}", UpdateAuction)
 			.WithName("UpdateAuction")
-			// .RequireAuthorization()
+			.RequireAuthorization()
 			.Produces<AuctionDto>(StatusCodes.Status200OK)
 			.Produces(StatusCodes.Status404NotFound)
 			.Produces(StatusCodes.Status403Forbidden);
 
 		api.MapDelete("/{id}", DeleteAuctionById)
 			.WithName("DeleteAuctionById")
-			// .RequireAuthorization()
+			.RequireAuthorization()
 			.Produces(StatusCodes.Status204NoContent)
 			.Produces(StatusCodes.Status404NotFound)
 			.Produces(StatusCodes.Status401Unauthorized);
@@ -89,6 +89,8 @@ public static class AuctionApi
 		[FromBody] CreateAuctionDto dto)
 	{
 		var auction = services.Mapper.Map<Auction>(dto);
+		auction.Seller = services.HttpContext.User.Identity!.Name!;
+
 		services.Context.Auctions.Add(auction);
 
 		var auctionDto = services.Mapper.Map<AuctionDto>(auction);
@@ -112,10 +114,10 @@ public static class AuctionApi
 
 		if (auction is null) return Results.NotFound();
 
-		// if (auction.Seller != services.HttpContext.User.Identity?.Name)
-		// {
-		// 	return Results.Forbid();
-		// }
+		if (auction.Seller != services.HttpContext.User.Identity!.Name)
+		{
+			return Results.Forbid();
+		}
 
 		auction.Item!.Make = dto.Make ?? auction.Item.Make;
 		auction.Item!.Model = dto.Model ?? auction.Item.Model;
@@ -149,10 +151,10 @@ public static class AuctionApi
 
 		if (auction == null) return Results.NotFound();
 
-		// if (auction.Seller != services.HttpContext.User.Identity?.Name)
-		// {
-		// 	return Results.Forbid();
-		// }
+		if (auction.Seller != services.HttpContext.User.Identity!.Name)
+		{
+			return Results.Forbid();
+		}
 
 		services.Context.Auctions.Remove(auction);
 

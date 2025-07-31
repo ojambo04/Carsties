@@ -61,7 +61,6 @@ public static class SearchApi
         query.PageSize(pageSize);
 
         var result = await query.ExecuteAsync();
-        var totalCount = await DB.CountAsync<Item>(); ;
 
         var paginatedList = new PaginatedList<Item>(
             result.Results,
