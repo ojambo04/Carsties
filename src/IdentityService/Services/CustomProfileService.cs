@@ -36,7 +36,11 @@ public class CustomProfileService : IProfileService
             claims.Add(nameClaim);
         }
 
-        context.IssuedClaims.AddRange(claims);
+        // var filteredClaims = claims
+        //     .Where(c => context.RequestedClaimTypes.Contains(c.Type))
+        //     .ToList();
+
+        context.IssuedClaims = claims;
     }
 
     public Task IsActiveAsync(IsActiveContext context)

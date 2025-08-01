@@ -18,7 +18,7 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host("localhost", "/", h =>
+        cfg.Host(builder.Configuration["RabbitMq:HostName"], "/", h =>
         {
             h.Username("guest");
             h.Password("guest");
@@ -56,24 +56,15 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// try
-// {
-//     await DbInitialiser.InitDbAsync(app);
-// }
-// catch (Exception ex)
-// {
-//     Console.WriteLine($"An error occurred while initialising the database: {ex.Message}");
-// }
-
 app.Lifetime.ApplicationStarted.Register(() =>
 {
-    Policy.Handle<HttpRequestException>()
+    Policy.Handle<TimeoutException>()
         .WaitAndRetryAsync(
             5,
-            retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+            retryAttempt => TimeSpan.FromSeconds(10),
             (exception, timeSpan, retryCount, context) =>
             {
-                Console.WriteLine($"Timeout occurred. Retry {retryCount} in {timeSpan.TotalSeconds} seconds. \nException: {exception.Message}");
+                Console.WriteLine($"MongoDB Timeout occurred. Retry {retryCount} in {timeSpan.TotalSeconds} seconds. \nException: {exception.Message}");
             }
         )
         .ExecuteAndCaptureAsync(async () => await DbInitialiser.InitDbAsync(app));
@@ -86,4 +77,11 @@ app.Run();
 static IAsyncPolicy<HttpResponseMessage> GetPolicy()
     => HttpPolicyExtensions
         .HandleTransientHttpError()
-        .WaitAndRetryAsync(5, retryAttempt => TimeSpan.FromSeconds(10));
+        .WaitAndRetryAsync(
+            5,
+            retryAttempt => TimeSpan.FromSeconds(10),
+            (outcome, timeSpan, retryCount, context) =>
+            {
+                Console.WriteLine($"Auction Service HttpError occurred. Retry {retryCount} in {timeSpan.TotalSeconds} seconds. \nException: {outcome.Exception?.Message}");
+            }
+        );

@@ -22,7 +22,7 @@ builder.Services.AddMassTransit(x =>
 
     x.AddEntityFrameworkOutbox<AuctionDbContext>(o =>
     {
-        o.QueryDelay = TimeSpan.FromSeconds(10);
+        o.QueryDelay = TimeSpan.FromSeconds(30);
 
         o.UsePostgres();
         o.UseBusOutbox();
@@ -30,7 +30,7 @@ builder.Services.AddMassTransit(x =>
 
     x.UsingRabbitMq((context, cfg) =>
     {
-        cfg.Host("localhost", "/", h =>
+        cfg.Host(builder.Configuration["RabbitMq:HostName"], "/", h =>
         {
             h.Username("guest");
             h.Password("guest");
