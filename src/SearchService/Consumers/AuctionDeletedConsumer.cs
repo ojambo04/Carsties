@@ -1,7 +1,7 @@
 using Contracts;
 using MassTransit;
 using MongoDB.Entities;
-using SearchService.Models;
+using SearchService.Entities;
 
 namespace SearchService.Consumers;
 

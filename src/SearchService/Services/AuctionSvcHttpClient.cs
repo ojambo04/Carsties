@@ -1,6 +1,6 @@
-using System;
 using MongoDB.Entities;
-using SearchService.Models;
+using SearchService.Entities;
+using SearchService.RequestHelpers;
 
 namespace SearchService.Services;
 
@@ -13,7 +13,7 @@ public class AuctionSvcHttpClient
         _httpClient = httpClient;
     }
 
-    public async Task<List<Item>> GetItemsAsync()
+    public async Task<IReadOnlyList<Item>> GetItemsAsync()
     {
         var lastUpdated = await DB.Find<Item, string>()
             .Sort(x => x.Descending(x => x.UpdatedAt))
@@ -22,8 +22,8 @@ public class AuctionSvcHttpClient
 
         Console.WriteLine($"Last updated date: {lastUpdated}");
 
-        var items = await _httpClient.GetFromJsonAsync<List<Item>>("/api/auctions?date=" + lastUpdated);
+        var result = await _httpClient.GetFromJsonAsync<PaginatedList<Item>>("/api/auctions?date=" + lastUpdated);
         
-        return items ?? new List<Item>();
+        return result?.Results ?? new List<Item>();
     }
 }

@@ -18,7 +18,7 @@ public static class AuctionApi
 
 		api.MapGet("/", GetAuctions)
 			.WithName("GetAuctions")
-			.Produces<List<AuctionDto>>(StatusCodes.Status200OK);
+			.Produces<PaginatedList<AuctionDto>>(StatusCodes.Status200OK);
 
 		api.MapGet("/{id}", GetAuctionById)
 			.WithName("GetAuctionsById")
@@ -51,20 +51,23 @@ public static class AuctionApi
 
 	private static async Task<IResult> GetAuctions(
 		[AsParameters] AuctionServices service,
-		[FromQuery] string? date)
+		[AsParameters] SearchParams searchParams)
 	{
-		var query = service.Context.Auctions
-			.OrderBy(x => x.Item!.Make).AsQueryable();
+		var query = service.Context.Auctions.AsQueryable();
 
-		if (!string.IsNullOrEmpty(date))
-		{
-			query = query.Where(x => x.UpdatedAt.CompareTo(DateTime.Parse(date).ToUniversalTime()) > 0);
-		}
+		var pageSize = searchParams.PageSize ?? 15;
+		var pageNumber = searchParams.PageNumber ?? 1;
+		var totalCount = await query.CountAsync();
 
-		var auction = await query.ProjectTo<AuctionDto>(service.Mapper.ConfigurationProvider)
+		var results = await query.ProjectTo<AuctionDto>(service.Mapper.ConfigurationProvider)
+			.Skip((pageNumber - 1) * pageSize)
+			.Take(pageSize)
 			.ToListAsync();
 
-		return Results.Ok(auction);
+		var pageCount = (int)Math.Ceiling((double)totalCount / pageSize);
+		var result = new PaginatedList<AuctionDto>(results, pageCount, totalCount);
+
+		return Results.Ok(result);
 	}
 
 	private static async Task<IResult> GetAuctionById(

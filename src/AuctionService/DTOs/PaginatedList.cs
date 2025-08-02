@@ -1,4 +1,4 @@
-namespace SearchService.RequestHelpers;
+namespace AuctionService.DTOs;
 
 public class PaginatedList<T>
 {
