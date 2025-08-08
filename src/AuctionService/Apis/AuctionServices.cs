@@ -5,8 +5,8 @@ using MassTransit;
 namespace AuctionService.Apis;
 
 public record AuctionServices(
-    IMapper Mapper,
-    AuctionDbContext Context,
     HttpContext HttpContext,
+    IAuctionRepository AuctionRepo,
+    IMapper Mapper,
     IPublishEndpoint Publisher
 );

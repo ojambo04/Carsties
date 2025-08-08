@@ -1,10 +1,8 @@
 using AuctionService.DTOs;
 using AuctionService.Entities;
 using AuctionService.Filters;
-using AutoMapper.QueryableExtensions;
 using Contracts;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace AuctionService.Apis;
 
@@ -49,41 +47,21 @@ public static class AuctionApi
 		return app;
 	}
 
-	private static async Task<IResult> GetAuctions(
+	public static async Task<IResult> GetAuctions(
 		[AsParameters] AuctionServices service,
 		[AsParameters] SearchParams searchParams)
 	{
-		var query = service.Context.Auctions.AsQueryable();
-
-		var pageSize = searchParams.PageSize ?? 15;
-		var pageNumber = searchParams.PageNumber ?? 1;
-		var totalCount = await query.CountAsync();
-
-		var results = await query.ProjectTo<AuctionDto>(service.Mapper.ConfigurationProvider)
-			.Skip((pageNumber - 1) * pageSize)
-			.Take(pageSize)
-			.ToListAsync();
-
-		var pageCount = (int)Math.Ceiling((double)totalCount / pageSize);
-		var result = new PaginatedList<AuctionDto>(results, pageCount, totalCount);
-
-		return Results.Ok(result);
+		return Results.Ok(await service.AuctionRepo.GetAuctionsAsync(searchParams));
 	}
 
-	private static async Task<IResult> GetAuctionById(
+	public static async Task<IResult> GetAuctionById(
 		[AsParameters] AuctionServices service,
 		[FromRoute] Guid id)
 	{
-		var auction = await service.Context.Auctions
-			.Include(x => x.Item)
-			.FirstOrDefaultAsync(x => x.Id == id);
+		var auctionDto = await service.AuctionRepo.GetAuctionByIdAsync(id);
 
-		if (auction == null)
-		{
-			return Results.NotFound();
-		}
+		if (auctionDto == null) return Results.NotFound();
 
-		var auctionDto = service.Mapper.Map<AuctionDto>(auction);
 		return Results.Ok(auctionDto);
 	}
 
@@ -94,12 +72,12 @@ public static class AuctionApi
 		var auction = services.Mapper.Map<Auction>(dto);
 		auction.Seller = services.HttpContext.User.Identity!.Name!;
 
-		services.Context.Auctions.Add(auction);
+		services.AuctionRepo.AddAuction(auction);
 
 		var auctionDto = services.Mapper.Map<AuctionDto>(auction);
 		await services.Publisher.Publish(services.Mapper.Map<AuctionCreated>(auctionDto));
 
-		var result = await services.Context.SaveChangesAsync() > 0;
+		bool result = await services.AuctionRepo.SaveChangesAsync();
 
 		return result ?
 			Results.Created($"/api/auctions/{auction.Id}", auctionDto) :
@@ -111,9 +89,7 @@ public static class AuctionApi
 		[FromRoute] Guid id,
 		[FromBody] UpdateAuctionDto dto)
 	{
-		var auction = await services.Context.Auctions
-			.Include(x => x.Item)
-			.FirstOrDefaultAsync(x => x.Id == id);
+		var auction = await services.AuctionRepo.GetAuctionEntityById(id);
 
 		if (auction is null) return Results.NotFound();
 
@@ -130,27 +106,20 @@ public static class AuctionApi
 
 		var auctionDto = services.Mapper.Map<AuctionDto>(auction);
 
-		// Check if any changes were made
-		if (!services.Context.ChangeTracker.HasChanges())
-		{
-			return Results.Ok(auctionDto);
-		}
-
 		await services.Publisher.Publish(services.Mapper.Map<AuctionUpdated>(auctionDto));
 
-		var result = await services.Context.SaveChangesAsync() > 0;
+		var result = await services.AuctionRepo.SaveChangesAsync();
 
 		return result ?
 			Results.Ok(auctionDto) :
 			Results.BadRequest("Failed to update auction");
 	}
 
-	private static async Task<IResult> DeleteAuctionById(
+	public static async Task<IResult> DeleteAuctionById(
 		[AsParameters] AuctionServices services,
 		[FromRoute] Guid id)
 	{
-		var auction = await services.Context.Auctions
-			.FirstOrDefaultAsync(x => x.Id == id);
+		var auction = await services.AuctionRepo.GetAuctionEntityById(id);
 
 		if (auction == null) return Results.NotFound();
 
@@ -159,12 +128,14 @@ public static class AuctionApi
 			return Results.Forbid();
 		}
 
-		services.Context.Auctions.Remove(auction);
+		services.AuctionRepo.RemoveAuction(auction);
 
 		await services.Publisher.Publish(new AuctionDeleted { Id = auction.Id.ToString() });
 
-		await services.Context.SaveChangesAsync();
+		var result = await services.AuctionRepo.SaveChangesAsync();
 
-		return Results.Ok();
+		return result ?
+			Results.Ok() :
+			Results.BadRequest("Failed to update auction");
 	}
 }
