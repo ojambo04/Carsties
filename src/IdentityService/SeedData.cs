@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Duende.IdentityModel;
 using IdentityService.Data;
 using IdentityService.Models;
@@ -10,7 +11,7 @@ namespace IdentityService;
 
 public class SeedData
 {
-    public static void EnsureSeedData(WebApplication app)
+    public static async Task EnsureSeedData(WebApplication app)
     {
         using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
         {
@@ -33,9 +34,7 @@ public class SeedData
                     throw new Exception(result.Errors.First().Description);
                 }
 
-                result = userMgr.AddClaimsAsync(alice, new Claim[]{
-                            new Claim(JwtClaimTypes.Name, "Alice Smith")
-                        }).Result;
+                result = await userMgr.AddClaimsAsync(alice, [new Claim(JwtClaimTypes.GivenName, "Alice Smith")]);
                 if (!result.Succeeded)
                 {
                     throw new Exception(result.Errors.First().Description);
@@ -62,9 +61,7 @@ public class SeedData
                     throw new Exception(result.Errors.First().Description);
                 }
 
-                result = userMgr.AddClaimsAsync(bob, new Claim[]{
-                            new Claim(JwtClaimTypes.Name, "Bob Smith")
-                        }).Result;
+                result = await userMgr.AddClaimsAsync(bob, [ new Claim(JwtClaimTypes.GivenName, "Bob Smith") ]);
                 if (!result.Succeeded)
                 {
                     throw new Exception(result.Errors.First().Description);

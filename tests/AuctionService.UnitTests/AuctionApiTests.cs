@@ -69,8 +69,7 @@ public class AuctionApiTests
             .ReturnsAsync(paginatedList);
 
         // Act
-        var result = await AuctionApi.GetAuctions(_auctionServices, searchParams); 
-
+        var result = await AuctionApi.GetAuctions(_auctionRepo.Object, searchParams); 
 
         // Assert
         var okResult = Assert.IsType<Ok<PaginatedList<AuctionDto>>>(result);
@@ -91,7 +90,7 @@ public class AuctionApiTests
             .ReturnsAsync(emptyList);
 
         // Act
-        var result = await AuctionApi.GetAuctions(_auctionServices, searchParams);
+        var result = await AuctionApi.GetAuctions(_auctionRepo.Object, searchParams);
 
         // Assert
         var okResult = Assert.IsType<Ok<PaginatedList<AuctionDto>>>(result);
@@ -108,7 +107,7 @@ public class AuctionApiTests
         _auctionRepo.Setup(repo => repo.GetAuctionByIdAsync(It.IsAny<Guid>())).ReturnsAsync(auction);
 
         // Act
-        var result = await AuctionApi.GetAuctionById(_auctionServices, Guid.NewGuid());
+        var result = await AuctionApi.GetAuctionById(_auctionRepo.Object, Guid.NewGuid());
 
         // Assert
         var okResult = Assert.IsType<Ok<AuctionDto>>(result);
@@ -123,7 +122,7 @@ public class AuctionApiTests
         _auctionRepo.Setup(repo => repo.GetAuctionByIdAsync(It.IsAny<Guid>())).ReturnsAsync(value: null);
 
         // Act
-        var result = await AuctionApi.GetAuctionById(_auctionServices, Guid.NewGuid());
+        var result = await AuctionApi.GetAuctionById(_auctionRepo.Object, Guid.NewGuid());
 
         // Assert
         Assert.IsType<NotFound>(result);

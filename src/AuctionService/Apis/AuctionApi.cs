@@ -1,3 +1,4 @@
+using AuctionService.Data;
 using AuctionService.DTOs;
 using AuctionService.Entities;
 using AuctionService.Filters;
@@ -48,17 +49,17 @@ public static class AuctionApi
 	}
 
 	public static async Task<IResult> GetAuctions(
-		[AsParameters] AuctionServices service,
+		[FromServices] IAuctionRepository repository,
 		[AsParameters] SearchParams searchParams)
 	{
-		return Results.Ok(await service.AuctionRepo.GetAuctionsAsync(searchParams));
+		return Results.Ok(await repository.GetAuctionsAsync(searchParams));
 	}
 
 	public static async Task<IResult> GetAuctionById(
-		[AsParameters] AuctionServices service,
+		[FromServices] IAuctionRepository repository,
 		[FromRoute] Guid id)
 	{
-		var auctionDto = await service.AuctionRepo.GetAuctionByIdAsync(id);
+		var auctionDto = await repository.GetAuctionByIdAsync(id);
 
 		if (auctionDto == null) return Results.NotFound();
 

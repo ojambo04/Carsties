@@ -19,12 +19,15 @@ services:
       - 27017:27017
     volumes:
       - mongodata:/data/db
+      - mongoconfig:/data/configdb
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
     ports:
       - 5672:5672
       - 15672:15672
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
 
   identity-svc:
     image: ojambo04/identity-svc:latest
@@ -88,3 +91,5 @@ services:
 volumes:
   pgdata:
   mongodata:
+  mongoconfig:
+  rabbitmqdata:

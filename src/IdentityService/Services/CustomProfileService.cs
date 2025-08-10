@@ -24,7 +24,7 @@ public class CustomProfileService : IProfileService
         if (user == null) return;
 
         var existingClaims = await _userManager.GetClaimsAsync(user);
-        var nameClaim = existingClaims.FirstOrDefault(x => x.Type == JwtClaimTypes.Name);
+        var nameClaim = existingClaims.FirstOrDefault(x => x.Type == JwtClaimTypes.GivenName);
 
         var claims = new List<Claim>
         {
