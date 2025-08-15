@@ -8,19 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
-    <PackageReference Include="Grpc.AspNetCore" Version="2.71.0" />
-    <PackageReference Include="MassTransit.EntityFrameworkCore" Version="8.5.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.32.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.72.0" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.7" />
+    <PackageReference Include="MongoDB.Entities" Version="24.1.1" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Data\Migrations\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="Protos\auction.proto" GrpcServices="Server" />
+    <Protobuf Include="..\AuctionService\Protos\auction.proto" GrpcServices="Client" />
   </ItemGroup>
+
 </Project>

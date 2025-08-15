@@ -7,9 +7,9 @@ namespace SearchService.Consumers;
 
 public class BidPlacedConsumer : IConsumer<BidPlaced>
 {
-    private readonly ILogger<AuctionFinishedConsumer> _logger;
+    private readonly ILogger<BidPlacedConsumer> _logger;
 
-    public BidPlacedConsumer(ILogger<AuctionFinishedConsumer> logger)
+    public BidPlacedConsumer(ILogger<BidPlacedConsumer> logger)
     {
         _logger = logger;
     }

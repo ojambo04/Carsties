@@ -2,14 +2,14 @@ using AuctionService.Data;
 using Contracts;
 using MassTransit;
 
-namespace AuctionService.Contracts;
+namespace AuctionService.Consumers;
 
 public class BidPlacedConsumer : IConsumer<BidPlaced>
 {
-    private readonly ILogger<AuctionFinishedConsumer> _logger;
+    private readonly ILogger<BidPlacedConsumer> _logger;
     private readonly AuctionDbContext _dbContext;
 
-    public BidPlacedConsumer(ILogger<AuctionFinishedConsumer> logger, AuctionDbContext dbContext)
+    public BidPlacedConsumer(ILogger<BidPlacedConsumer> logger, AuctionDbContext dbContext)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -19,7 +19,8 @@ public class BidPlacedConsumer : IConsumer<BidPlaced>
     {
         _logger.LogInformation("--> Consuming bid placed");
 
-        var auction = await _dbContext.Auctions.FindAsync(context.Message.AuctionId);
+        var auctionId = Guid.Parse(context.Message.AuctionId);
+        var auction = await _dbContext.Auctions.FindAsync(auctionId);
 
         if (auction == null)
         {

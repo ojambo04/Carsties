@@ -3,7 +3,7 @@ using AuctionService.Entities;
 using Contracts;
 using MassTransit;
 
-namespace AuctionService.Contracts;
+namespace AuctionService.Consumers;
 
 public class AuctionFinishedConsumer : IConsumer<AuctionFinished>
 {
@@ -20,7 +20,8 @@ public class AuctionFinishedConsumer : IConsumer<AuctionFinished>
     {
         _logger.LogInformation("--> Consuming auction finished");
 
-        var auction = await _dbContext.Auctions.FindAsync(context.Message.AuctionId);
+        var auctionId = Guid.Parse(context.Message.AuctionId);
+        var auction = await _dbContext.Auctions.FindAsync(auctionId);
 
         if (auction == null)
         {

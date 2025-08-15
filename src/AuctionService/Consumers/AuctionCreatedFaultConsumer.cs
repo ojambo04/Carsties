@@ -1,7 +1,7 @@
 using Contracts;
 using MassTransit;
 
-namespace AuctionService.Contracts;
+namespace AuctionService.Consumers;
 
 public class AuctionCreatedFaultConsumer : IConsumer<Fault<AuctionCreated>>
 {

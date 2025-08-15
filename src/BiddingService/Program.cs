@@ -1,36 +1,21 @@
-using AuctionService.Apis;
-using AuctionService.Consumers;
-using AuctionService.Data;
-using AuctionService.Services;
+using BiddingService.Apis;
+using BiddingService.Consumers;
+using BiddingService.Services;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
+using MongoDB.Entities;
+using Polly;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
-builder.Services.AddScoped<IAuctionRepository, AuctionRepository>();
-builder.Services.AddGrpc();
-
-builder.Services.AddDbContext<AuctionDbContext>(options =>
-{
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
-
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumersFromNamespaceContaining<AuctionCreatedFaultConsumer>();
-    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("auction", false));
-
-    x.AddEntityFrameworkOutbox<AuctionDbContext>(o =>
-    {
-        o.QueryDelay = TimeSpan.FromSeconds(60);
-
-        o.UsePostgres();
-        o.UseBusOutbox();
-    });
+    x.AddConsumersFromNamespaceContaining<AuctionCreatedConsumer>();
+    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("bid", false));
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -52,13 +37,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters.ValidateAudience = false;
         options.TokenValidationParameters.NameClaimType = "username";
     });
-    
+
 builder.Services.AddAuthorization();
+builder.Services.AddHostedService<CheckAuctionFinished>();
+builder.Services.AddScoped<GrpcAuctionClient>();
 
 var app = builder.Build();
-
-app.UseAuthentication();
-app.UseAuthorization();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -70,19 +54,24 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.MapAuctionApi();
+app.UseAuthentication();
+app.UseAuthorization();
 
-app.MapGrpcService<GrpcAuctionService>();
+app.MapBiddingApi();
 
-try
-{
-    DbInitializer.InitDb(app);
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"An error occurred while initializing the database: {ex.Message}");
-}
+await Policy.Handle<TimeoutException>()
+    .WaitAndRetryAsync(
+        5,
+        retryAttempt => TimeSpan.FromSeconds(10),
+        (exception, timeSpan, retryCount, context) =>
+        {
+            Console.WriteLine($"MongoDB Timeout occurred. Retry {retryCount} in {timeSpan.TotalSeconds} seconds. \nException: {exception.Message}");
+        }
+    )
+    .ExecuteAndCaptureAsync(async () =>
+    { 
+        await DB.InitAsync("BidDb", MongoClientSettings
+            .FromConnectionString(builder.Configuration.GetConnectionString("MongoDbConnection")));
+    });
 
 app.Run();
-
-public partial class Program { }
